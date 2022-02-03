@@ -1,3 +1,8 @@
+''' Made by Arthur Cury Meirelles
+The goal is to make an Auto rigging for vehicle
+Made for my studies at BCIT for the Technical Atist course
+my e-mail is: arthurcurymeirelles@hotmail.com'''
+
 import maya.cmds as cmds
 Loclist=[]
 TheJoint=[]
@@ -71,18 +76,6 @@ def MakeJoints():
         TheJoint=cmds.joint(n='Arm%s' %i)
         Thelocator=i
         cmds.matchTransform(TheJoint,Thelocator,pos=True)
-
-
-        
-
-       
-        #print (TheJoint)
-       
-
-
-#print(Loclist.count-1)
-       
-       
 
     
     
