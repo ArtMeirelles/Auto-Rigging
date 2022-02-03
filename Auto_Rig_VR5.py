@@ -1,23 +1,42 @@
+''' Made by Arthur Cury Meirelles
+The goal is to make an Auto rigging for vehicle
+Made for my studies at BCIT for the Technical Atist course
+my e-mail is: arthurcurymeirelles@hotmail.com'''
+
 import maya.cmds as cmds
-#import maya.mel as mel
+
+
+Name_User="JointName"
 Loclist=[]
 TheJoint=[]
 ############Window UI
 
-WinName = 'ArmRig'
+WinName = 'Auto' +'_IK_' +'FK'
 if cmds.window(WinName, q=True, exists=True):
     cmds.deleteUI(WinName)
    
    
-cmds.window(WinName)
-cmds.columnLayout()
+cmds.window(WinName,s=False,h=230,w=390,bgc=(0.2,0.2,0.2))
+cmds.columnLayout(adj=False,h=230,w=390)
 cmds.text('Arm rigging Tool')
 cmds.text('Before anything make sure your model is aimin at positive Z')
+cmds.rowLayout(adj=2,nc=2)
 MakeLocators=cmds.button(l='make Locators',en=True,c='LocatorPivot()')
 #saveLBtn=cmds.button(l='Save Positions',en=False,c='saveLoc()')
 ResetLBtn=cmds.button(l='Undo Locators', en=True,c='ResetLoc()')
+cmds.setParent('..')
+cmds.separator(w=550,h=20)
 msg002=cmds.text('now click on create joints')
+Joint_Name = cmds.textFieldGrp(l="Name for the joints: ",tx="JointsName", cc="Name_User = cmds.textFieldGrp(Joint_Name, q=1, tx=1)")
+Confirm_Name=cmds.button(l='Confirm Name',en=True,c='Name_User = cmds.textFieldGrp(Joint_Name, q=1, tx=1)')
+cmds.separator(w=550,h=20)
+cmds.rowLayout(adj=1,nc=5)
 MakeJointBtn=cmds.button(l='make joints',en=True,c='MakeJoints()')
+AxisJnts=cmds.button(l='show axis joints',en=True,c='setAxisDisplay(display=True)')
+HideAxisJnts=cmds.button(l='hide axis joints',en=True,c='setAxisDisplay(display=False)')
+cmds.setParent('..')
+cmds.separator(w=550,h=20)
+cmds.rowLayout(adj=1,nc=5)
 MakeIKBtn=cmds.button(l='make IK',en=True,c='Hierarchy(), Ikmaker()')
 MakeFKBtn=cmds.button(l='make FK',en=True,c='FKMaker()')
 
@@ -37,7 +56,8 @@ def LocatorPivot():
             cmds.delete(newCon)
 
 
-   
+def Name_Joints():
+    cmds.textFieldGrp(l="Name for the joints: ",tx="JointsName", cc="Name_User = cmds.textFieldGrp(Joint_Name, q=1, tx=1)")
        
 #Undo Locators
 
@@ -69,22 +89,45 @@ def saveLoc():
 def MakeJoints():
     cmds.select(cl=True)
     for i in Loclist:
-        TheJoint=cmds.joint(n='Arm%s' %i)
+        TheJoint=cmds.joint(n=Name_User + '%s' %i)
+        sel=cmds.ls(sl=True, type='joint')
+        cmds.select(sel)
+        print (sel)
         Thelocator=i
         cmds.matchTransform(TheJoint,Thelocator,pos=True)
 
 
+
         
+def setAxisDisplay(display=True):
+    cmds.listRelatives(allDescendents=True, type='joint')
+    cmds.select(hi=True,add=True)
+    cmds.ls(sl=True,type='joint')
+    # if no joints are selected, do it for all the joints in the scene
+    if len(cmds.ls(sl=1, type="joint")) == 0:
+        jointList = cmds.ls(type="joint")
+    else:
+        jointList = cmds.ls(sl=1, type="joint")
+    # set the displayLocalAxis attribute to what the user specifies.
+    for jnt in jointList:
+        cmds.setAttr(jnt + ".displayLocalAxis", display)
 
+        
+def setAxisDisplay(display=False):
+    cmds.listRelatives(allDescendents=True, type='joint')
+    cmds.select(hi=True,add=True)
+    cmds.ls(sl=True,type='joint')
+    # if no joints are selected, do it for all the joints in the scene
+    if len(cmds.ls(sl=1, type="joint")) == 0:
+        jointList = cmds.ls(type="joint")
+    else:
+        jointList = cmds.ls(sl=1, type="joint")
+    # set the displayLocalAxis attribute to what the user specifies.
+    for jnt in jointList:
+        cmds.setAttr(jnt + ".displayLocalAxis", display)
        
-        #print (TheJoint)
+    
        
-
-
-#print(Loclist.count-1)
-       
-       
-
     
     
 def orderjnts():
@@ -148,18 +191,18 @@ def grouping():
 
 def FKMaker():
     children_joints = cmds.listRelatives(allDescendents=True, type='joint')
-    cmds.select(children_joints, add=True)
+    cmds.select(hi=True,add=True)
     jnts=cmds.ls(sl=True,type='joint')
     for i in range(len(jnts)):
         boxCTRL()
-        ctrl_node=cmds.ls(sl=True,type='transform')[0]
+        ctrl_node=cmds.ls(sl=True,type='transform')
         #Align translation and rotation using parent contraint
         cmds.delete(cmds.parentConstraint(jnts[i],ctrl_node))
         #Split "_Jnt" from joint name
         jnt_id=jnts[i].split('_Jnt')
         print (jnt_id)
         #Rename box curve to chosen name of control
-        ctrl= cmds.rename(ctrl_node, 'Arm_fk_CTRL' + jnt_id[1])
+        ctrl= cmds.rename(ctrl_node, Name_User + '_fk_CTRL' + jnt_id[1])
         cmds.select(ctrl, r=True)
         orderjnts()
         resize()
@@ -180,24 +223,11 @@ def FKMaker():
         cmds.select(jnt_id + '_Jnt_%s' %i, tgl=True )
     crvs = cmds.ls(typ='nurbsCurve', ni=True, o=True, r=True)
     print (crvs)
-    xfos = cmds.listRelatives(crvs, allDescendents=True,p=True, typ="transform")
+    xfos = cmds.listRelatives(crvs,p=True, typ="transform")
     print (xfos)
     cmds.select(xfos)
     for x in range(1,len(xfos)):
-        cmds.parentConstraint(xfos[x+1],  (xfos[x] +  '_world'),mo=True)
+        cmds.parentConstraint(xfos[x-1],  (xfos[x] +  '_world'),mo=True)
         cmds.setKeyframe((xfos[x] +  '_world'), at=['translate','rotate'])
         cmds.connectAttr(xfos[x] + '.parent', (xfos[x] +  '_world.blendParent1'),f=True)
         
-        
-        
-def parentCTRL():
-    cmds.select(cl=True )
-    crvs = cmds.ls(typ='nurbsCurve', ni=True, o=True, r=True)
-    print (crvs)
-    xfos = cmds.listRelatives(crvs,p=True, typ="transform")
-    print (xfos)
-    cmds.select(xfos[0])
-    for x in range(1,len(crvs)):
-        cmds.parentConstraint(xfos[x+1], (xfos[x] +  '_world'),mo=True)
-        cmds.setKeyframe((xfos[x] +  '_world'), at=['translate','rotate'])
-        cmds.connectAttr(xfos[x] + '.parent', (xfos[x] +  '_world.blendParent1'),f=True)
