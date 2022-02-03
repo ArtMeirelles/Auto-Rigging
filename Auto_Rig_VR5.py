@@ -1,5 +1,4 @@
 import maya.cmds as cmds
-#import maya.mel as mel
 Loclist=[]
 TheJoint=[]
 ############Window UI
@@ -187,17 +186,4 @@ def FKMaker():
         cmds.parentConstraint(xfos[x+1],  (xfos[x] +  '_world'),mo=True)
         cmds.setKeyframe((xfos[x] +  '_world'), at=['translate','rotate'])
         cmds.connectAttr(xfos[x] + '.parent', (xfos[x] +  '_world.blendParent1'),f=True)
-        
-        
-        
-def parentCTRL():
-    cmds.select(cl=True )
-    crvs = cmds.ls(typ='nurbsCurve', ni=True, o=True, r=True)
-    print (crvs)
-    xfos = cmds.listRelatives(crvs,p=True, typ="transform")
-    print (xfos)
-    cmds.select(xfos[0])
-    for x in range(1,len(crvs)):
-        cmds.parentConstraint(xfos[x+1], (xfos[x] +  '_world'),mo=True)
-        cmds.setKeyframe((xfos[x] +  '_world'), at=['translate','rotate'])
-        cmds.connectAttr(xfos[x] + '.parent', (xfos[x] +  '_world.blendParent1'),f=True)
+       
