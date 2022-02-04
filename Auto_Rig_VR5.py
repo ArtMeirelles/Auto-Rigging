@@ -19,26 +19,33 @@ if cmds.window(WinName, q=True, exists=True):
 cmds.window(WinName,s=False,h=230,w=390,bgc=(0.2,0.2,0.2))
 cmds.columnLayout(adj=False,h=230,w=390)
 cmds.text('Arm rigging Tool')
-cmds.text('Before anything make sure your model is aimin at positive Z')
+msg001=cmds.text('Before anything make sure your model is aimin at positive Z')
+msg001=cmds.text('Locators goes to pivot position of meshes that you select')
 cmds.rowLayout(adj=2,nc=2)
 MakeLocators=cmds.button(l='make Locators',en=True,c='LocatorPivot()')
-#saveLBtn=cmds.button(l='Save Positions',en=False,c='saveLoc()')
 ResetLBtn=cmds.button(l='Undo Locators', en=True,c='ResetLoc()')
 cmds.setParent('..')
 cmds.separator(w=550,h=20)
-msg002=cmds.text('now click on create joints')
+msg002=cmds.text('Always change the name before creating a new chain of joints!CONFIRM NAME!')
+cmds.rowLayout(adj=1,nc=2)
 Joint_Name = cmds.textFieldGrp(l="Name for the joints: ",tx="JointsName", cc="Name_User = cmds.textFieldGrp(Joint_Name, q=1, tx=1)")
 Confirm_Name=cmds.button(l='Confirm Name',en=True,c='Name_User = cmds.textFieldGrp(Joint_Name, q=1, tx=1)')
+cmds.setParent('..')
 cmds.separator(w=550,h=20)
-cmds.rowLayout(adj=1,nc=5)
+msg003=cmds.text('Create Joints')
+cmds.rowLayout(adj=1,nc=3)
 MakeJointBtn=cmds.button(l='make joints',en=True,c='MakeJoints()')
 AxisJnts=cmds.button(l='show axis joints',en=True,c='setAxisDisplay(display=True)')
 HideAxisJnts=cmds.button(l='hide axis joints',en=True,c='setAxisDisplay(display=False)')
 cmds.setParent('..')
 cmds.separator(w=550,h=20)
-cmds.rowLayout(adj=1,nc=5)
+msg004=cmds.text('Choose between IK/FK')
+cmds.rowLayout(adj=1,nc=2)
 MakeIKBtn=cmds.button(l='make IK',en=True,c='Hierarchy(), Ikmaker()')
 MakeFKBtn=cmds.button(l='make FK',en=True,c='FKMaker()')
+cmds.setParent('..')
+cmds.separator(w=550,h=20)
+msg005=cmds.text('After you create the joints, you can press "Undo Locators", so you can make another chain of joints')
 
 
 cmds.showWindow()
@@ -139,9 +146,7 @@ def orderjnts():
    
 def Ikmaker():
     IKSelec=cmds.ls(sl=True)
-    #ClearSelec=cmds.select(cl=True)
     print (IKSelec)
-    #print (ClearSelec)
     last_jnt = cmds.listRelatives(allDescendents=True, type='joint')[1]
     rp_IK=cmds.ikHandle( sol='ikRPsolver', sj=(IKSelec[0]), ee=(last_jnt))
     rp= cmds.rename(rp_IK[0],('End_IK'))
@@ -167,7 +172,7 @@ def resize():
         cl=cmds.cluster()
         cl_resize=cmds.rename(cl[1],item + '_resize')
         cmds.addAttr(item, ln='radius', at='double',min=0,dv=1)
-        cmds.setAttr(item + '.radius',e=True,k=True)
+        cmds.setAttr(item + '.radius',e=True,k=False, channelBox=True)
         rad=item + '.radius'
         cmds.connectAttr(rad,cl_resize + '.sx', f=True)
         cmds.connectAttr(rad,cl_resize + '.sy', f=True)
@@ -190,7 +195,9 @@ def grouping():
 
 
 def FKMaker():
-    children_joints = cmds.listRelatives(allDescendents=True, type='joint')
+    #here we select just the joints with hierarchy
+    #and store selection of joints olnly in variable "jnts"
+    cmds.listRelatives(allDescendents=True, type='joint')
     cmds.select(hi=True,add=True)
     jnts=cmds.ls(sl=True,type='joint')
     for i in range(len(jnts)):
@@ -231,3 +238,90 @@ def FKMaker():
         cmds.setKeyframe((xfos[x] +  '_world'), at=['translate','rotate'])
         cmds.connectAttr(xfos[x] + '.parent', (xfos[x] +  '_world.blendParent1'),f=True)
         
+        
+        
+        
+
+def IKFunction():
+    objs=cmds.ls(sl=True,type='transform')
+    for obj in objs:
+        boxCTRL()
+        ctrl_node=cmds.ls(sl=True,type='transform')
+        #Align translation and rotation using parent contraint
+        cmds.delete(cmds.parentConstraint(obj,ctrl_node))
+        #Split "_Jnt" from joint name
+        jnt_id=obj.split('_Jnt')
+        print (jnt_id)
+        #Rename box curve to chosen name of control
+        ctrl= cmds.rename(ctrl_node, Name_User + jnt_id[0] + '_ik_CTRL' )
+        cmds.select(ctrl, r=True)
+        orderjnts()
+        resize()
+        cmds.select(ctrl, r=True)
+        grouping()
+        cmds.parent(obj,ctrl)
+        cmds.setAttr(ctrl + '.sx',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.sy',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.sz',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.visibility',e=True,l=True,k=False)
+        
+        
+def IK_pv_Function():
+    objs=cmds.ls(sl=True,type='transform')
+    for obj in objs:
+        boxCTRL()
+        ctrl_node=cmds.ls(sl=True,type='transform')
+        #Align translation and rotation using parent contraint
+        cmds.delete(cmds.parentConstraint(obj,ctrl_node))
+        #Split "_Jnt" from joint name
+        jnt_id=obj.split('_Jnt')
+        print (jnt_id)
+        #Rename box curve to chosen name of control
+        ctrl= cmds.rename(ctrl_node, Name_User + jnt_id[0] + '_pv_CTRL' )
+        cmds.select(ctrl, r=True)
+        orderjnts()
+        resize()
+        cmds.select(ctrl, r=True)
+        grouping()
+        #rotation and scale
+        cmds.setAttr(ctrl + '.rx',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.ry',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.rz',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.sx',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.sy',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.sz',e=True,l=True,k=False)
+        cmds.setAttr(ctrl + '.visibility',e=True,l=True,k=False)
+        
+        
+#Resize function in nurbs channels
+def resize_circle():
+    objs=cmds.ls(sl=True,type='transform')
+    for obj in objs:
+        cmds.addAttr(obj, ln='radius', at='double',min=0,dv=1)
+        cmds.setAttr(obj + '.radius',e=True,k=False, channelBox=True)
+        cmds.connectAttr((obj + '.radius'),(obj + '_attrs.radius'), f=True)
+        
+        
+#Lock channels and making sure they are not keyable
+def lockXformCH ():
+    objs=cmds.ls(sl=True,type='transform')
+    for obj in objs:
+        cmds.setAttr(obj + '.tx',e=True,l=True,k=False)
+        cmds.setAttr(obj + '.ty',e=True,l=True,k=False)
+        cmds.setAttr(obj + '.tz',e=True,l=True,k=False)
+        cmds.setAttr(obj + '.rx',e=True,l=True,k=False)
+        cmds.setAttr(obj + '.ry',e=True,l=True,k=False)
+        cmds.setAttr(obj + '.rz',e=True,l=True,k=False)
+        cmds.setAttr(obj + '.sx',e=True,l=True,k=False)
+        cmds.setAttr(obj + '.sy',e=True,l=True,k=False)
+        cmds.setAttr(obj + '.sz',e=True,l=True,k=False)
+        
+#hide shape nodes
+def hideshapes():
+    objs=cmds.ls(sl=True,type='transform')
+    for obj in objs:
+        shapes=cmds.listRelatives(obj, type='shape')[0]
+        for shape in shapes:
+            cmds.setAttr(shape + '.visibility', 0)
+            
+            
