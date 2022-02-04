@@ -1,7 +1,7 @@
 '''
 Made by Arthur Cury Meirelles
 The goal is to make an Auto rigging for vehicle
-Made for my studies at BCIT during Technical Atist course.
+Made for my studies at BCIT during Technical Artist course.
 
 Contact:
     arthurcurymeirelles@hotmail.com
