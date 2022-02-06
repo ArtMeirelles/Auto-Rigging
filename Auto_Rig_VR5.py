@@ -15,6 +15,7 @@ import maya.cmds as cmds
 name_user="JointsName"
 loc_list=[]
 the_joint=[]
+i=[]
 
     ### Auto Rig Functions ###
     
@@ -26,7 +27,7 @@ def locator_pivot():
     else:
         sel = cmds.ls(sl = True)
         for obj in sel:
-                newLoc = cmds.spaceLocator(n='_Jnt_%s' %i)
+                newLoc = cmds.spaceLocator(n='_Jnt'%i+'+1')
                 newCon = cmds.parentConstraint(obj, newLoc, mo = 0)
                 loc_list.append(newLoc[0])
                 cmds.delete(newCon)
@@ -254,7 +255,6 @@ def hideshapes():
         shapes=cmds.listRelatives(obj, type='shape')[0]
         for shape in shapes:
             cmds.setAttr(shape + '.visibility', 0)
-            
     
     ### Window UI ###
 win_name = 'Auto' +'_IK_' +'FK'
