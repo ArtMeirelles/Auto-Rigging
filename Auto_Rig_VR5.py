@@ -650,7 +650,7 @@ def bindskin_joints():
         mel.eval('newSkinCluster \"-toSelectedBones -bindMethod 1  -normalizeWeights 1 -mi 1 -omi true -rui true\"')
 
 def arrow_drop():
-    cmds.curve(
+    arrow_curv = cmds.curve(
         n = "WheelCTRL",
         d = 1, 
         p = [(-1,0,-2), (-1, 0 ,2), (-2, 0,2), (0,0,4), (2,0,2),
@@ -666,11 +666,15 @@ def arrow_drop():
         cmds.rotate(90,0,0)
     cmds.closeCurve(rpo = True)
 
+
 def wheel_selection():
     nameNumber = 1
     global updated_index
     wheel_selection.selected_wheels = cmds.ls(sl=True)
     print(wheel_selection.selected_wheels)
+    wheel_sdk_grp = cmds.group(n = "Wheels_Jnt_SDK_" + str(nameNumber).zfill(3))
+    cmds.select('Wheels_Jnt_SDK_*')
+    list_for_SDK = cmds.ls(sl=True,type='transform')
     if len(wheel_selection.selected_wheels) >= 1:
         wheel_selection.wheel_group = cmds.group(n = "Wheels_Jnt_GRP_" + str(nameNumber).zfill(3))
         nameNumber += 1
@@ -694,18 +698,45 @@ def wheel_selection():
             rotation = "x"
         for wheel in wheel_selection.selected_wheels:
             cmds.expression(n = "rotator", s = f"{wheel}.r{rotation}=WheelCTRL.t{axis}*{rot_mult}")
-        cmds.parentConstraint('WheelCTRL', wheel_selection.wheel_group, mo = True)
-        rename_asset()
+        curv_sel = cmds.rename("WheelCTRL","WheelCTRL_" + str(nameNumber).zfill(3))
+        cmds.scale(0.5,0.5,0.5, curv_sel)
         cmds.parent(wheel_selection.wheel_group, 'vehicle_GRP')
-        group_wheel_CTRL()
+        cmds.parent(list_for_SDK,w=True)
+        cmds.parent(wheel_selection.wheel_group,w=True)
         grp_wheel = cmds.ls("Wheels_Jnt_GRP_*", type='transform')
         for x in range(len(grp_wheel)):
             cmds.connectAttr('global_CTRL' + '.scale', grp_wheel[x] + '.scale', f=True)
-            cmds.warning('Ready to use!')
-        else:
-            pass
+            cmds.warning("control created!")
     else:
         cmds.warning("Select at least 1 object")
+    
+
+def wheel_ready():
+    wheels_grp = cmds.select('Wheels_Jnt_GRP*')
+    wheels_list = cmds.ls(sl=True,type='transform')
+    global_ctrl_curv = cmds.select('global_CTRL')
+    global_list = cmds.ls('global_CTRL',sl=True,type='transform')
+
+    sel_all_cruvs = cmds.select('WheelCTRL_*')
+    list_of_curvs = cmds.ls(sl=True,type='transform')
+    sel_all_SDK_grp = cmds.select('Wheels_Jnt_SDK_*')
+    list_of_SDK = cmds.ls(sl=True,type='transform')
+
+    for globs in global_list:
+        for grps in list_of_curvs:
+            cmds.parent(grps,globs)
+
+
+    for offset,sdk_grp in zip(wheels_list,list_of_SDK):
+        cmds.parent(sdk_grp,offset)
+
+    for curvs,sdk in zip(list_of_curvs,list_of_SDK):
+        cmds.parentConstraint(curvs,sdk,mo=1)
+
+    for globs in global_list:
+        for grps in wheels_list:
+            cmds.parentConstraint(globs,grps,mo=1)
+            cmds.scaleConstraint(globs,grps,mo=1)
 
 def group_wheel_CTRL():
     nodes = cmds.ls("WheelCTRL_*")
@@ -966,7 +997,7 @@ cmds.separator(width = 200, h = 10)
 joint_name_wheel = cmds.textFieldGrp(label="Name for the joints: ", text="JointsName", cc="NewJointName = cmds.textFieldGrp(joint_name_wheel, q=1, tx=1)")
 confirm_name = cmds.button(label='Confirm Name', enable=True, command='NewJointName = cmds.textFieldGrp(joint_name_wheel, q=1, tx=1)', backgroundColor=(0.3,0.3,0.3))
 cmds.separator(width = 200, h = 10)
-rotation_speed = cmds.intSliderGrp(l = "Adjust Rotation Multiplier",f = True, v = 20, min = 1, max = 100, sbm = "You are setting the rotation multiplier")
+rotation_speed = cmds.intSliderGrp(l = "Adjust Rotation Multiplier",f = True, v = 50, min = 1, max = 100, sbm = "You are setting the rotation multiplier")
 radial_selection_button = cmds.radioButtonGrp(
     l = "Direction of Controler",
     labelArray3 = ["X", "Y", "Z"],
@@ -983,6 +1014,8 @@ cmds.separator(width = 200, h = 10)
 cmds.button(l = "Undo", c = "reset_all()", backgroundColor=(0.3,0.3,0.3))
 cmds.separator(width = 200, h = 10)
 cmds.button(l = "Extra Arrow CTRL", c = "extra_arrow_drop()", backgroundColor=(0.3,0.3,0.3))
+cmds.separator(width = 200, h = 10)
+cmds.button(l = "Ready", c = "wheel_ready()", backgroundColor=(0.3,0.3,0.3))
 
 cmds.setParent('..')
 
